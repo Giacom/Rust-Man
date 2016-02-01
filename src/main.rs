@@ -1,12 +1,14 @@
 extern crate sfml;
 
 mod player;
+mod input;
 
 use sfml::system::{Vector2f};
 use sfml::window::{ContextSettings, VideoMode, event, Close};
 use sfml::window::keyboard::Key;
 use sfml::graphics::{RenderWindow, RenderTarget, Color};
 use player::Player;
+use input::Input;
 
 fn main() {
 
@@ -24,6 +26,7 @@ fn main() {
     };
 
     let mut player: Player = Player::new(window_width / 2.0, window_height / 2.0, 32.0, 32.0);
+    let mut input: Input;
 
     while window.is_open() {
     
@@ -33,6 +36,7 @@ fn main() {
                 event::KeyPressed{code, ..} => check_input(&mut window, &mut player, code),
                 _ => { /* Nothing */ }
             }
+            input.check_input(&event);
         }
         
         window.clear(&Color::black());
@@ -41,6 +45,7 @@ fn main() {
     }
 }
 
+// TODO: Change to use new input struct.
 fn check_input(window: &mut RenderWindow, player: &mut Player, key_pressed: Key) {
     
     let move_speed = 5.0;

@@ -26,37 +26,48 @@ fn main() {
     };
 
     let mut player: Player = Player::new(window_width / 2.0, window_height / 2.0, 32.0, 32.0);
-    let mut input: Input;
+    let mut input: Input = Input::new();
 
     while window.is_open() {
-    
+        input.clear_input(); 
         for event in window.events() {
             match event {
                 event::Closed => window.close(),
-                event::KeyPressed{code, ..} => check_input(&mut window, &mut player, code),
                 _ => { /* Nothing */ }
             }
-            input.check_input(&event);
+            input.check_input(event);
         }
-        
+
+        player_input(&mut window, &mut player, &input);
+
         window.clear(&Color::black());
         window.draw(&player);
         window.display();
     }
 }
 
-// TODO: Change to use new input struct.
-fn check_input(window: &mut RenderWindow, player: &mut Player, key_pressed: Key) {
+fn player_input(window: &mut RenderWindow, player: &mut Player, input: &Input) {
     
-    let move_speed = 5.0;
+    let move_speed = 0.05;
+    
+    if input.is_key_held_down(Key::W) {
+        move_player(player, Vector2f::new(0.0, -move_speed));
+    }
 
-    match key_pressed {
-        Key::Escape => window.close(),
-        Key::W => move_player(player, Vector2f::new(0.0, -move_speed)),
-        Key::S => move_player(player, Vector2f::new(0.0, move_speed)),
-        Key::A => move_player(player, Vector2f::new(-move_speed, 0.0)),
-        Key::D => move_player(player, Vector2f::new(move_speed, 0.0)),
-        _ => { }
+    if input.is_key_held_down(Key::S) {
+        move_player(player, Vector2f::new(0.0, move_speed));
+    }
+
+    if input.is_key_held_down(Key::A) {
+        move_player(player, Vector2f::new(-move_speed, 0.0));
+    }
+
+    if input.is_key_held_down(Key::D) {
+        move_player(player, Vector2f::new(move_speed, 0.0));
+    }
+
+    if input.is_key_down(Key::Escape) {
+        window.close();
     }
 }
 

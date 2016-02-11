@@ -1,8 +1,8 @@
-use sfml::system::Clock;
+use sfml::system as sf;
 use units;
 
 pub struct GameTime {
-    clock: Clock,
+    clock: sf::Clock,
 
     pub start_time: units::MS,
     pub elapsed_time: units::MS,
@@ -15,20 +15,19 @@ pub struct GameTime {
 
     pub ticks: units::MS,
     pub fixed_ticks: units::MS,
-    pub fps: i32
+    pub fps: i32,
 }
 
 impl GameTime {
-
     pub fn new() -> GameTime {
-        let clock: Clock = Clock::new();
+        let clock: sf::Clock = sf::Clock::new();
 
-        GameTime {    
-            start_time: clock.get_elapsed_time().as_milliseconds() as units::MS,
+        GameTime {
+            start_time: clock.get_elapsed_time().as_milliseconds(),
             elapsed_time: 0,
 
             start_frame_time: 0,
-            previous_frame_time: 0,
+            previous_frame_time: clock.get_elapsed_time().as_milliseconds(),
 
             delta_time: 0.0,
             fixed_time: 0.0,
@@ -37,7 +36,7 @@ impl GameTime {
             fixed_ticks: 0,
             fps: 0,
 
-            clock: clock
+            clock: clock,
         }
     }
 

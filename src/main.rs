@@ -5,20 +5,23 @@ mod player;
 mod input;
 mod game_time;
 mod units;
+mod level_object;
+mod sprite_sheet;
 
 use sfml::system as sf;
 use sfml::window::{ContextSettings, VideoMode, event, Close};
 use sfml::window::keyboard::Key;
 use sfml::graphics::{RenderWindow, RenderTarget, Color, Text, Font, View};
 
-use player::{Player, MoveDirection};
+use player::{Player};
 use input::Input;
 use game_time::GameTime;
-use level::{Level, LevelObject};
+use level::Level;
+use level_object::LevelType;
 
 const TARGET_FPS: i32 = 60;
 const MS_PER_UPDATE: units::MS = 1000;
-const MS_PER_FRAME: units::MS = MS_PER_UPDATE / TARGET_FPS;
+//const MS_PER_FRAME: units::MS = MS_PER_UPDATE / TARGET_FPS;
 
 const SCREEN_SCALE: u32 = 2;
 const GAME_SIZE: u32 = 8 * SCREEN_SCALE;
@@ -26,8 +29,8 @@ const GAME_SIZE: u32 = 8 * SCREEN_SCALE;
 const WINDOW_WIDTH: u32 = 224 * SCREEN_SCALE;
 const WINDOW_HEIGHT: u32 = 288 * SCREEN_SCALE;
 
-const LEVEL_WIDTH: u32 = (WINDOW_WIDTH / GAME_SIZE) - 1;
-const LEVEL_HEIGHT: u32 = (WINDOW_HEIGHT / GAME_SIZE) - 1;
+const LEVEL_WIDTH: u32 = (WINDOW_WIDTH / GAME_SIZE);
+const LEVEL_HEIGHT: u32 = (WINDOW_HEIGHT / GAME_SIZE);
 
 fn main() {
     
@@ -42,15 +45,15 @@ fn main() {
     };
     window.set_key_repeat_enabled(false);
 
-    let mut debug_level = Vec::<Vec<LevelObject>>::new();
+    let mut debug_level = Vec::<Vec<LevelType>>::new();
     
     for x in 0..LEVEL_WIDTH {
-        debug_level.push(Vec::<LevelObject>::new());
+        debug_level.push(Vec::<LevelType>::new());
         for y in 0..LEVEL_HEIGHT {
             if x == y {
-                debug_level[x as usize].push(LevelObject::WALL);
+                debug_level[x as usize].push(LevelType::WALL);
             } else {
-                debug_level[x as usize].push(LevelObject::SPACE);
+                debug_level[x as usize].push(LevelType::SPACE);
             }
         }
     }
@@ -115,6 +118,7 @@ fn main() {
         // Rendering
         window.set_view(&view);
         window.clear(&Color::black());
+        window.draw(&level);
         window.draw(&player);
         window.draw(&fps_text);
         window.display();

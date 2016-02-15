@@ -29,8 +29,8 @@ const GAME_SIZE: u32 = 8 * SCREEN_SCALE;
 const WINDOW_WIDTH: u32 = 224 * SCREEN_SCALE;
 const WINDOW_HEIGHT: u32 = 288 * SCREEN_SCALE;
 
-const LEVEL_WIDTH: u32 = (WINDOW_WIDTH / GAME_SIZE);
-const LEVEL_HEIGHT: u32 = (WINDOW_HEIGHT / GAME_SIZE);
+const LEVEL_WIDTH: u32 = (WINDOW_WIDTH / GAME_SIZE) - 1;
+const LEVEL_HEIGHT: u32 = (WINDOW_HEIGHT / GAME_SIZE) - 1;
 
 fn main() {
     
@@ -47,10 +47,10 @@ fn main() {
 
     let mut debug_level = Vec::<Vec<LevelType>>::new();
     
-    for x in 0..LEVEL_WIDTH {
+    for x in 0..LEVEL_WIDTH + 1 {
         debug_level.push(Vec::<LevelType>::new());
-        for y in 0..LEVEL_HEIGHT {
-            if x == y {
+        for y in 0..LEVEL_HEIGHT + 1 {
+            if x == 0 || y == 0 || x == LEVEL_WIDTH || y == LEVEL_HEIGHT {
                 debug_level[x as usize].push(LevelType::WALL);
             } else {
                 debug_level[x as usize].push(LevelType::SPACE);

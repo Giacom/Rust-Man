@@ -1,21 +1,36 @@
 use std::collections::HashMap;
-use sfml::graphics::Sprite;
+use sfml::graphics::{FloatRect, Texture};
 
-const SPRITESHEET_PATH: &'static str = "res/sprites";
+use level_object::LevelType;
 
-pub struct SpriteSheet<'a> {
-    sprite_map: HashMap<&'static str, Sprite<'a>>
+const SPRITE_SIZE: f32 = 64.0;
+const SPRITESHEET_PATH: &'static str = "res/sprites/game.png";
+
+pub struct SpriteSheet {
+    pub texture: Texture,
+    sprite_map: HashMap<LevelType, FloatRect>
 }
 
-impl<'a> SpriteSheet<'a> {
-    pub fn new() -> SpriteSheet<'a> {
+impl SpriteSheet {
+    pub fn new() -> SpriteSheet {
         SpriteSheet {
-            sprite_map: SpriteSheet::generate_map()
+            sprite_map: SpriteSheet::generate_map(),
+            texture: Texture::new_from_file(SPRITESHEET_PATH).unwrap()
         }
     }
     
-    pub fn generate_map() -> HashMap<&'static str, Sprite<'a>> {
-        return HashMap::new()
+    fn generate_map() -> HashMap<LevelType, FloatRect> {
+        let mut generated_map = HashMap::new();
+        generated_map.insert(LevelType::SPACE, FloatRect::new(SPRITE_SIZE * 1.0, SPRITE_SIZE * 1.0, SPRITE_SIZE, SPRITE_SIZE));
+        generated_map.insert(LevelType::WALL, FloatRect::new(SPRITE_SIZE * 0.0, SPRITE_SIZE * 0.0, SPRITE_SIZE, SPRITE_SIZE));
+        return generated_map;
+    }
+    
+    pub fn get_texture_rect(&self, level_type: &LevelType) -> &FloatRect {
+        match &self.sprite_map.get(level_type) {
+            &Some(thing) => thing,
+            &None => panic!("Unable to retrieve LevelType::{:?}. Map's contents was: {:?}", level_type, self.sprite_map)
+        }
     }
 }
 

@@ -1,28 +1,21 @@
-use sfml::graphics::{RenderTarget, RectangleShape};
-use sfml::traits::Drawable;
+use sfml::graphics::{FloatRect};
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum LevelType {
     SPACE,
     WALL
 }
 
-pub struct LevelObject<'s> {
-    pub sprite: RectangleShape<'s>,
+pub struct LevelObject {
+    pub position: FloatRect,
     pub level_type: LevelType
 }
 
-impl <'s> LevelObject<'s> {
-    pub fn new(level_type: LevelType) -> LevelObject<'s> {
+impl LevelObject {
+    pub fn new(level_type: LevelType) -> LevelObject {
         LevelObject {
-            sprite: RectangleShape::new().unwrap(),
+            position: FloatRect::new(0.0, 0.0, 0.0, 0.0),
             level_type: level_type
         }
-    }
-}
-
-impl<'s> Drawable for LevelObject<'s> {
-    fn draw<RT: RenderTarget>(&self, target: &mut RT) {
-        self.sprite.draw(target);
     }
 }

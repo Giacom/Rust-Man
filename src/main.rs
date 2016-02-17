@@ -8,6 +8,8 @@ mod units;
 mod level_object;
 mod sprite_sheet;
 
+use std::fs::File;
+use std::io::Read;
 use sfml::system as sf;
 use sfml::window::{ContextSettings, VideoMode, event, Close};
 use sfml::window::keyboard::Key;
@@ -17,7 +19,6 @@ use player::{Player};
 use input::Input;
 use game_time::GameTime;
 use level::Level;
-use level_object::LevelType;
 
 const TARGET_FPS: i32 = 60;
 const MS_PER_UPDATE: units::MS = 1000;
@@ -26,15 +27,27 @@ const MS_PER_UPDATE: units::MS = 1000;
 const SCREEN_SCALE: u32 = 2;
 const GAME_SIZE: u32 = 8 * SCREEN_SCALE;
 
-const WINDOW_WIDTH: u32 = 224 * SCREEN_SCALE;
-const WINDOW_HEIGHT: u32 = 288 * SCREEN_SCALE;
+const MAP_PATH: &'static str = "res/game_map.txt";
 
-const LEVEL_WIDTH: u32 = (WINDOW_WIDTH / GAME_SIZE) - 1;
-const LEVEL_HEIGHT: u32 = (WINDOW_HEIGHT / GAME_SIZE) - 1;
 
 fn main() {
     
-    let mut window = match RenderWindow::new(VideoMode::new_init(WINDOW_WIDTH, WINDOW_HEIGHT, 32),
+    let mut map = String::new();
+    {
+        let mut file = match File::open(MAP_PATH) {
+            Err(why) => panic!("Unable to open map file: {} - Reason: {}", MAP_PATH, why),
+            Ok(file) => file
+        };
+        match file.read_to_string(&mut map) {
+            Err(why) => panic!("Unable to read map file: {} - Reason: {}", MAP_PATH, why),
+            Ok(_) => { }
+        }
+    };
+    
+    let level: Level = Level::new_with_text(&map[..]);
+    
+    let mut window = match RenderWindow::new(VideoMode::new_init(((level.width as u32) * GAME_SIZE),
+                                                                 ((level.height as u32) * GAME_SIZE), 32),
                                             "Rust-Man",
                                             Close,
                                             &ContextSettings::default()) {
@@ -44,28 +57,15 @@ fn main() {
     
     };
     window.set_key_repeat_enabled(false);
+    
 
-    let mut debug_level = Vec::<Vec<LevelType>>::new();
     
-    for x in 0..LEVEL_WIDTH + 1 {
-        debug_level.push(Vec::<LevelType>::new());
-        for y in 0..LEVEL_HEIGHT + 1 {
-            if x == 0 || y == 0 || x == LEVEL_WIDTH || y == LEVEL_HEIGHT {
-                debug_level[x as usize].push(LevelType::WALL);
-            } else {
-                debug_level[x as usize].push(LevelType::SPACE);
-            }
-        }
-    }
-    
-    let level: Level = Level::new_with_map(debug_level);
-    
-    let mut player: Player = Player::new(WINDOW_WIDTH as f32 / 2.0, WINDOW_HEIGHT as f32 / 2.0, 16.0, 16.0);
+    let mut player: Player = Player::new(((level.width as f32) * GAME_SIZE as f32) / 2.0, ((level.height as f32) * GAME_SIZE as f32) / 2.0, 16.0, 16.0);
     let mut input: Input = Input::new();
     let mut game_time: GameTime = GameTime::new();
     
-    let view: View = View::new_init(&sf::Vector2f::new(WINDOW_WIDTH as f32 / 2.0, WINDOW_HEIGHT as f32 / 2.0),
-                                        &sf::Vector2f::new(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32)).unwrap();
+    let view: View = View::new_init(&sf::Vector2f::new(window.get_size().x as f32 / 2.0, window.get_size().y as f32 / 2.0),
+                                        &sf::Vector2f::new(window.get_size().x as f32, window.get_size().y as f32)).unwrap();
 
     let font: Font = match Font::new_from_file("res/fonts/arial.ttf") {
         Some(font) => font,

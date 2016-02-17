@@ -50,6 +50,7 @@ impl Input {
         (*self.keys_down.get(&HKey(key)).unwrap_or(&false) == true)
     }
 
+    #[allow(dead_code)]
     pub fn is_key_up(&self, key: Key) -> bool {
         (*self.keys_up.get(&HKey(key)).unwrap_or(&false) == true)
     }

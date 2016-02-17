@@ -5,29 +5,29 @@ use sfml::traits::Drawable;
 use level_object::{LevelObject, LevelType};
 use sprite_sheet::SpriteSheet;
 
-pub struct Level {
+pub struct Level<'a> {
     pub height: usize,
     pub width: usize,
     map: Vec<Vec<LevelObject>>,
-    sprite_sheet: SpriteSheet,
+    sprite_sheet: &'a SpriteSheet,
     vertex_array: VertexArray
 }
 
-impl Level {
+impl<'a> Level<'a> {
  
-    pub fn new_with_map(height: usize, width: usize, map: Vec<Vec<LevelType>>) -> Level {
+    pub fn new_with_map(height: usize, width: usize, map: Vec<Vec<LevelType>>, sprite_sheet: &'a SpriteSheet) -> Level<'a> {
         let new_map = Level::setup_map(&map);
 
         Level {
             width: width,
             height: height,
             map: new_map,
-            sprite_sheet: SpriteSheet::new(),
+            sprite_sheet: sprite_sheet,
             vertex_array: VertexArray::new_init(PrimitiveType::Quads, (width * height * 4) as u32).unwrap()
         }
     }
     
-    pub fn new_with_text(text: &str) -> Level {
+    pub fn new_with_text(text: &str, sprite_sheet: &'a SpriteSheet) -> Level<'a> {
         println!("Loading map:\n\n{}\n", text);
 
         let mut map = vec![];
@@ -57,7 +57,7 @@ impl Level {
             }
         }
 
-        Level::new_with_map(level_height, level_width, map)
+        Level::new_with_map(level_height, level_width, map, sprite_sheet)
     }
     
     pub fn setup_map(map: &Vec<Vec<LevelType>>) -> Vec<Vec<LevelObject>> {
@@ -82,14 +82,14 @@ impl Level {
     }
 }
 
-impl Drawable for Level {
+impl<'a> Drawable for Level<'a> {
     fn draw<RT: RenderTarget>(&self, target: &mut RT) {
         let mut vertex_count = 0;
         
         for x in 0..self.width {
             for y in 0..self.height {
                 let level_object = &self.map[x][y];
-                let texture_rect = self.sprite_sheet.get_texture_rect(&level_object.level_type);
+                let texture_rect = self.sprite_sheet.get_background_texture_rect(&level_object.level_type);
                 
                 // Bottom left
                 self.vertex_array.get_vertex(vertex_count + 0).position = Vector2f::new(level_object.position.left,

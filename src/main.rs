@@ -19,18 +19,21 @@ use player::{Player};
 use input::Input;
 use game_time::GameTime;
 use level::Level;
+use sprite_sheet::SpriteSheet;
 
 const TARGET_FPS: i32 = 60;
 const MS_PER_UPDATE: units::MS = 1000;
 //const MS_PER_FRAME: units::MS = MS_PER_UPDATE / TARGET_FPS;
 
-const SCREEN_SCALE: u32 = 2;
+const SCREEN_SCALE: u32 = 4;
 const GAME_SIZE: u32 = 8 * SCREEN_SCALE;
 
 const MAP_PATH: &'static str = "res/game_map.txt";
 
 
 fn main() {
+    
+    let sprite_sheet = SpriteSheet::new();
     
     let mut map = String::new();
     {
@@ -44,7 +47,7 @@ fn main() {
         }
     };
     
-    let level: Level = Level::new_with_text(&map[..]);
+    let level: Level = Level::new_with_text(&map[..], &sprite_sheet);
     
     let mut window = match RenderWindow::new(VideoMode::new_init(((level.width as u32) * GAME_SIZE),
                                                                  ((level.height as u32) * GAME_SIZE), 32),
@@ -60,7 +63,9 @@ fn main() {
     
 
     
-    let mut player: Player = Player::new(((level.width as f32) * GAME_SIZE as f32) / 2.0, ((level.height as f32) * GAME_SIZE as f32) / 2.0, 16.0, 16.0);
+    let mut player: Player = Player::new(((level.width as f32) * GAME_SIZE as f32) / 2.0,
+                                         ((level.height as f32) * GAME_SIZE as f32) / 2.0,
+                                         &sprite_sheet);
     let mut input: Input = Input::new();
     let mut game_time: GameTime = GameTime::new();
     
@@ -107,6 +112,8 @@ fn main() {
 
         // Update
         player.process_input(&input, &game_time);
+        //view.set_center(&player.transform.get_position());
+        //window.set_view(&view);
 
         // Fixed Update
         while game_time.fixed_time >= MS_PER_UPDATE as units::DT {
@@ -134,7 +141,7 @@ fn main() {
         }
 
         if game_time.ticks % 100 == 0 {
-            let player_pos = player.shape.get_position();
+            let player_pos = player.transform.get_position();
             fps_text.set_string(&format!("FPS: {} - Player Pos: {}, {}", game_time.fps, player_pos.x, player_pos.y));
         }
     }

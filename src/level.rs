@@ -1,3 +1,5 @@
+use std::cmp;
+
 use sfml::system::{Vector2f};
 use sfml::graphics::{RenderStates, RenderTarget, FloatRect, VertexArray, PrimitiveType};
 use sfml::traits::Drawable;
@@ -74,11 +76,33 @@ impl<'a> Level<'a> {
                                                        (y as u32 * super::GAME_SIZE) as f32,
                                                        super::GAME_SIZE as f32,
                                                        super::GAME_SIZE as f32);
-                
                 returned_map[x].push(level_object);
             }
         }
         return returned_map;
+    }
+    
+    pub fn get_tile(&self, x: i32, y: i32) -> &LevelObject {
+       return &self.map[cmp::max(cmp::min(x, (self.width - 1) as i32), 0) as usize][cmp::max(cmp::min(y, (self.height - 1) as i32), 0) as usize];
+    }
+    
+    pub fn world_to_tile(x: f32, y: f32) -> (i32, i32) {
+        let mut x = x as i32;
+        let mut y = y as i32;
+        
+        x &= !(super::GAME_SIZE as i32 - 1);
+        y &= !(super::GAME_SIZE as i32 - 1);
+        if x != 0 {
+            x /= super::GAME_SIZE as i32;
+        }
+        if y != 0 {
+            y /= super::GAME_SIZE as i32;
+        }
+        return (x, y);
+    }
+    
+    pub fn tile_to_world(x: i32, y: i32) -> Vector2f {
+        Vector2f::new((x * super::GAME_SIZE as i32) as f32, (y * super::GAME_SIZE as i32) as f32)
     }
 }
 

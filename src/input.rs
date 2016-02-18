@@ -42,6 +42,7 @@ impl Input {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_key_held_down(&self, key: Key) -> bool {
         (*self.held_keys.get(&HKey(key)).unwrap_or(&false) == true)
     }

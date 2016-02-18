@@ -111,7 +111,7 @@ fn main() {
 
 
         // Update
-        player.process_input(&input, &game_time);
+        player.update(&input, &game_time, &level);
         //view.set_center(&player.transform.get_position());
         //window.set_view(&view);
 

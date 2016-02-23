@@ -8,12 +8,10 @@ mod units;
 mod level_object;
 mod sprite_sheet;
 
-use std::fs::File;
-use std::io::Read;
 use sfml::system as sf;
 use sfml::window::{ContextSettings, VideoMode, event, Close};
 use sfml::window::keyboard::Key;
-use sfml::graphics::{RenderWindow, RenderTarget, Color, Text, Font, View};
+use sfml::graphics::{Image, RenderWindow, RenderTarget, Color, Text, Font, View};
 
 use player::{Player};
 use input::Input;
@@ -28,29 +26,17 @@ const MS_PER_UPDATE: units::MS = 1000;
 const SCREEN_SCALE: u32 = 4;
 const GAME_SIZE: u32 = 8 * SCREEN_SCALE;
 
-const MAP_PATH: &'static str = "res/game_map.txt";
+const MAP_PATH: &'static str = "res/game_map.png";
 
 
 fn main() {
     
     let sprite_sheet = SpriteSheet::new();
     
-    let mut map = String::new();
-    {
-        let mut file = match File::open(MAP_PATH) {
-            Err(why) => panic!("Unable to open map file: {} - Reason: {}", MAP_PATH, why),
-            Ok(file) => file
-        };
-        match file.read_to_string(&mut map) {
-            Err(why) => panic!("Unable to read map file: {} - Reason: {}", MAP_PATH, why),
-            Ok(_) => { }
-        }
-    };
+    let level: Level = Level::new_with_image(&Image::new_from_file(MAP_PATH).unwrap(), &sprite_sheet);
     
-    let level: Level = Level::new_with_text(&map[..], &sprite_sheet);
-    
-    let mut window = match RenderWindow::new(VideoMode::new_init(((level.width as u32) * GAME_SIZE),
-                                                                 ((level.height as u32) * GAME_SIZE), 32),
+    let mut window = match RenderWindow::new(VideoMode::new_init(((level.size.x as u32) * GAME_SIZE),
+                                                                 ((level.size.y as u32) * GAME_SIZE), 32),
                                             "Rust-Man",
                                             Close,
                                             &ContextSettings::default()) {
@@ -63,8 +49,8 @@ fn main() {
     
 
     
-    let mut player: Player = Player::new(((level.width as f32) * GAME_SIZE as f32) / 2.0,
-                                         ((level.height as f32) * GAME_SIZE as f32) / 2.0,
+    let mut player: Player = Player::new(((level.size.x as f32) * GAME_SIZE as f32) / 2.0,
+                                         ((level.size.y as f32) * GAME_SIZE as f32) / 2.0,
                                          &sprite_sheet);
     let mut input: Input = Input::new();
     let mut game_time: GameTime = GameTime::new();

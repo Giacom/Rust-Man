@@ -1,33 +1,33 @@
 use std::cmp;
 
 use sfml::system::{Vector2f, Vector2u};
-use sfml::graphics::{Color, RenderStates, RenderTarget, FloatRect, VertexArray, PrimitiveType, Image};
+use sfml::graphics::{Color, RenderStates, RenderTarget, VertexArray, PrimitiveType, Image, Texture};
 use sfml::traits::Drawable;
 
 use level_object::{LevelObject, LevelType};
 use sprite_sheet::SpriteSheet;
 
-pub struct Level<'a> {
+pub struct Level<'s> {
     pub size: Vector2u,
-    map: Vec<Vec<LevelObject>>,
-    sprite_sheet: &'a SpriteSheet,
-    vertex_array: VertexArray
+    map: Vec<Vec<LevelObject<'s>>>,
+    vertex_array: VertexArray,
+    texture: &'s Texture
 }
 
-impl<'a> Level<'a> {
+impl<'s> Level<'s> {
  
-    pub fn new_with_map(size: Vector2u, map: Vec<Vec<LevelType>>, sprite_sheet: &'a SpriteSheet) -> Level<'a> {
-        let new_map = Level::setup_map(&map);
+    pub fn new_with_map(size: Vector2u, map: Vec<Vec<LevelType>>, sprite_sheet: &'s SpriteSheet) -> Level<'s> {
+        let new_map = Level::setup_map(&map, sprite_sheet);
 
         Level {
             size: size,
             map: new_map,
-            sprite_sheet: sprite_sheet,
-            vertex_array: VertexArray::new_init(PrimitiveType::Quads, (size.x * size.y * 4)).unwrap()
+            vertex_array: VertexArray::new_init(PrimitiveType::Quads, (size.x * size.y * 4)).unwrap(),
+            texture: &sprite_sheet.texture
         }
     }
     
-    pub fn new_with_image(image: &Image, sprite_sheet: &'a SpriteSheet) -> Level<'a> {
+    pub fn new_with_image(image: &Image, sprite_sheet: &'s SpriteSheet) -> Level<'s> {
         let level_size = image.get_size();
         let mut map = vec![];
         
@@ -45,20 +45,23 @@ impl<'a> Level<'a> {
         Level::new_with_map(level_size, map, sprite_sheet)
     }
     
-    pub fn setup_map(map: &Vec<Vec<LevelType>>) -> Vec<Vec<LevelObject>> {
+    pub fn setup_map(map: &Vec<Vec<LevelType>>, sprite_sheet: &'s SpriteSheet) -> Vec<Vec<LevelObject<'s>>> {
 
         let mut returned_map = vec![vec![]];
         
         for x in 0..map.len() {
-            returned_map.push(Vec::<LevelObject>::new());
+            returned_map.push(Vec::<LevelObject<'s>>::new());
             for y in 0..map[0].len() {
                 let level_type = map[x][y].clone();
-                let mut level_object = LevelObject::new(level_type);
-
-                level_object.position = FloatRect::new((x as u32 * super::GAME_SIZE) as f32,
-                                                       (y as u32 * super::GAME_SIZE) as f32,
-                                                       super::GAME_SIZE as f32,
-                                                       super::GAME_SIZE as f32);
+                let mut sprite = sprite_sheet.generate_background_sprite(&level_type);
+                
+                let local_bounds = sprite.get_local_bounds();
+                let new_scale = Vector2f::new(super::GAME_SIZE as f32 / local_bounds.width, super::GAME_SIZE as f32 / local_bounds.height);
+        
+                sprite.set_scale(&new_scale);
+                sprite.set_position(&Level::tile_to_world(x as i32, y as i32));
+                
+                let level_object = LevelObject::new(level_type, sprite);
                 returned_map[x].push(level_object);
             }
         }
@@ -84,49 +87,50 @@ impl<'a> Level<'a> {
         return (x, y);
     }
     
-    #[allow(dead_code)]
     pub fn tile_to_world(x: i32, y: i32) -> Vector2f {
         Vector2f::new((x * super::GAME_SIZE as i32) as f32, (y * super::GAME_SIZE as i32) as f32)
     }
 }
 
-impl<'a> Drawable for Level<'a> {
+impl<'s> Drawable for Level<'s> {
     fn draw<RT: RenderTarget>(&self, target: &mut RT) {
         let mut vertex_count = 0;
         
         for x in 0..self.size.x {
             for y in 0..self.size.y {
                 let level_object = &self.map[x as usize][y as usize];
-                let texture_rect = self.sprite_sheet.get_background_texture_rect(&level_object.level_type);
+                
+                let level_object_bounds = level_object.sprite.get_global_bounds();
+                let texture_rect = level_object.sprite.get_texture_rect();
                 
                 // Bottom left
-                self.vertex_array.get_vertex(vertex_count + 0).position = Vector2f::new(level_object.position.left,
-                                                                                   level_object.position.top + level_object.position.height);
-                self.vertex_array.get_vertex(vertex_count + 0).tex_coords = Vector2f::new(texture_rect.left,
-                                                                                   texture_rect.top + texture_rect.height);
+                self.vertex_array.get_vertex(vertex_count + 0).position = Vector2f::new(level_object_bounds.left,
+                                                                                   level_object_bounds.top + level_object_bounds.height);
+                self.vertex_array.get_vertex(vertex_count + 0).tex_coords = Vector2f::new(texture_rect.left as f32,
+                                                                                   (texture_rect.top + texture_rect.height) as f32);
                 
                 // Top left
-                self.vertex_array.get_vertex(vertex_count + 1).position = Vector2f::new(level_object.position.left,
-                                                                                   level_object.position.top);
-                self.vertex_array.get_vertex(vertex_count + 1).tex_coords = Vector2f::new(texture_rect.left,
-                                                                                     texture_rect.top);
+                self.vertex_array.get_vertex(vertex_count + 1).position = Vector2f::new(level_object_bounds.left,
+                                                                                   level_object_bounds.top);
+                self.vertex_array.get_vertex(vertex_count + 1).tex_coords = Vector2f::new(texture_rect.left as f32,
+                                                                                     texture_rect.top as f32);
                 
                 // Top right
-                self.vertex_array.get_vertex(vertex_count + 2).position = Vector2f::new(level_object.position.left +
-                                                                                   level_object.position.width, level_object.position.top);
-                self.vertex_array.get_vertex(vertex_count + 2).tex_coords = Vector2f::new(texture_rect.left +
-                                                                                     texture_rect.width, texture_rect.top);
+                self.vertex_array.get_vertex(vertex_count + 2).position = Vector2f::new(level_object_bounds.left +
+                                                                                   level_object_bounds.width, level_object_bounds.top);
+                self.vertex_array.get_vertex(vertex_count + 2).tex_coords = Vector2f::new((texture_rect.left +
+                                                                                     texture_rect.width) as f32, texture_rect.top as f32);
                 
                 // Bottom right
-                self.vertex_array.get_vertex(vertex_count + 3).position = Vector2f::new(level_object.position.left +
-                                                                                   level_object.position.width, level_object.position.top + level_object.position.height);
-                self.vertex_array.get_vertex(vertex_count + 3).tex_coords = Vector2f::new(texture_rect.left +
-                                                                                    texture_rect.width, texture_rect.top + texture_rect.height);
+                self.vertex_array.get_vertex(vertex_count + 3).position = Vector2f::new(level_object_bounds.left +
+                                                                                   level_object_bounds.width, level_object_bounds.top + level_object_bounds.height);
+                self.vertex_array.get_vertex(vertex_count + 3).tex_coords = Vector2f::new((texture_rect.left +
+                                                                                    texture_rect.width) as f32, (texture_rect.top + texture_rect.height) as f32);
                 vertex_count += 4;
             }
         }
         let mut states = RenderStates::default();
-        states.texture = Some(&self.sprite_sheet.texture);
+        states.texture = Some(self.texture);
         target.draw_with_renderstates(&self.vertex_array, &mut states);
     }
 }

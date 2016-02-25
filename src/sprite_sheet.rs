@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use sfml::graphics::{FloatRect, Texture};
+use sfml::graphics::{IntRect, Texture, Sprite};
 
 use level_object::LevelType;
 
@@ -13,8 +13,8 @@ pub enum SpriteType {
 
 pub struct SpriteSheet {
     pub texture: Texture,
-    sprite_background_map: HashMap<LevelType, FloatRect>,
-    sprite_foreground_map: HashMap<SpriteType, FloatRect>
+    sprite_background_map: HashMap<LevelType, IntRect>,
+    sprite_foreground_map: HashMap<SpriteType, IntRect>
 }
 
 impl SpriteSheet {
@@ -26,29 +26,43 @@ impl SpriteSheet {
         }
     }
     
-    fn generate_background_map() -> HashMap<LevelType, FloatRect> {
+    fn generate_background_map() -> HashMap<LevelType, IntRect> {
         let mut generated_map = HashMap::new();
-        generated_map.insert(LevelType::SPACE, FloatRect::new(SPRITE_SIZE * 1.0, SPRITE_SIZE * 0.0, SPRITE_SIZE, SPRITE_SIZE));
-        generated_map.insert(LevelType::WALL, FloatRect::new(SPRITE_SIZE * 0.0, SPRITE_SIZE * 0.0, SPRITE_SIZE, SPRITE_SIZE));
+        generated_map.insert(LevelType::SPACE, IntRect::new((SPRITE_SIZE * 1.0) as i32,
+                                                            (SPRITE_SIZE * 0.0) as i32,
+                                                            SPRITE_SIZE as i32, SPRITE_SIZE as i32));
+        generated_map.insert(LevelType::WALL, IntRect::new((SPRITE_SIZE * 0.0) as i32,
+                                                           (SPRITE_SIZE * 0.0) as i32,
+                                                            SPRITE_SIZE as i32, SPRITE_SIZE as i32));
         return generated_map;
     }
     
-    fn generate_foreground_map() -> HashMap<SpriteType, FloatRect> {
+    fn generate_foreground_map() -> HashMap<SpriteType, IntRect> {
         let mut generated_map = HashMap::new();
-        generated_map.insert(SpriteType::PLAYER, FloatRect::new(SPRITE_SIZE * 0.0,  SPRITE_SIZE * 1.0, SPRITE_SIZE, SPRITE_SIZE));
+        generated_map.insert(SpriteType::PLAYER, IntRect::new((SPRITE_SIZE * 0.0) as i32,
+                                                              (SPRITE_SIZE * 1.0) as i32,
+                                                               SPRITE_SIZE as i32, SPRITE_SIZE as i32));
         return generated_map;
     }
     
-    pub fn get_background_texture_rect(&self, level_type: &LevelType) -> &FloatRect {
+    pub fn generate_background_sprite(&self, level_type: &LevelType) -> Sprite {
         match &self.sprite_background_map.get(level_type) {
-            &Some(thing) => thing,
+            &Some(thing) => {
+                let mut sprite = Sprite::new_with_texture(&self.texture).unwrap();
+                sprite.set_texture_rect(&thing);
+                return sprite;
+            },
             &None => panic!("Unable to retrieve LevelType::{:?}. Map's contents was: {:?}", level_type, self.sprite_background_map)
         }
     }
     
-    pub fn get_foreground_texture_rect(&self, sprite_type: &SpriteType) -> &FloatRect {
+    pub fn generate_foreground_sprite(&self, sprite_type: &SpriteType) -> Sprite {
         match &self.sprite_foreground_map.get(sprite_type) {
-            &Some(thing) => thing,
+            &Some(thing) => {
+                let mut sprite = Sprite::new_with_texture(&self.texture).unwrap();
+                sprite.set_texture_rect(&thing);
+                return sprite;
+            }
             &None => panic!("Unable to retrieve SpriteType::{:?}.")
         }
     }

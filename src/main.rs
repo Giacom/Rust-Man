@@ -8,16 +8,15 @@ mod units;
 mod level_object;
 mod sprite_sheet;
 
-use sfml::system as sf;
 use sfml::window::{ContextSettings, VideoMode, event, Close};
 use sfml::window::keyboard::Key;
-use sfml::graphics::{Image, RenderWindow, RenderTarget, Color, Text, Font, View};
+use sfml::graphics::{Image, RenderWindow, RenderTarget, Color, Text, Font};
 
 use player::{Player};
 use input::Input;
 use game_time::GameTime;
 use level::Level;
-use sprite_sheet::SpriteSheet;
+use sprite_sheet::{SpriteType, SpriteSheet};
 
 const TARGET_FPS: i32 = 60;
 const MS_PER_UPDATE: units::MS = 1000;
@@ -51,12 +50,9 @@ fn main() {
     
     let mut player: Player = Player::new(((level.size.x as f32) * GAME_SIZE as f32) / 2.0,
                                          ((level.size.y as f32) * GAME_SIZE as f32) / 2.0,
-                                         &sprite_sheet);
+                                         sprite_sheet.generate_foreground_sprite(&SpriteType::PLAYER));
     let mut input: Input = Input::new();
     let mut game_time: GameTime = GameTime::new();
-    
-    let view: View = View::new_init(&sf::Vector2f::new(window.get_size().x as f32 / 2.0, window.get_size().y as f32 / 2.0),
-                                        &sf::Vector2f::new(window.get_size().x as f32, window.get_size().y as f32)).unwrap();
 
     let font: Font = match Font::new_from_file("res/fonts/arial.ttf") {
         Some(font) => font,
@@ -98,8 +94,6 @@ fn main() {
 
         // Update
         player.update(&input, &game_time, &level);
-        //view.set_center(&player.transform.get_position());
-        //window.set_view(&view);
 
         // Fixed Update
         while game_time.fixed_time >= MS_PER_UPDATE as units::DT {
@@ -109,7 +103,6 @@ fn main() {
         }
 
         // Rendering
-        window.set_view(&view);
         window.clear(&Color::black());
         window.draw(&level);
         window.draw(&player);
@@ -127,7 +120,7 @@ fn main() {
         }
 
         if game_time.ticks % 100 == 0 {
-            let player_pos = player.transform.get_position();
+            let player_pos = player.sprite.get_position();
             fps_text.set_string(&format!("FPS: {} - Player Pos: {}, {}", game_time.fps, player_pos.x, player_pos.y));
         }
     }

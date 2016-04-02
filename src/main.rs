@@ -7,6 +7,7 @@ mod game_time;
 mod units;
 mod level_object;
 mod sprite_sheet;
+mod animation_sprite;
 
 use sfml::window::{ContextSettings, VideoMode, event, Close};
 use sfml::window::keyboard::Key;
@@ -17,6 +18,7 @@ use input::Input;
 use game_time::GameTime;
 use level::Level;
 use sprite_sheet::{SpriteType, SpriteSheet};
+use animation_sprite::{AnimationSprite};
 
 const TARGET_FPS: i32 = 60;
 const MS_PER_UPDATE: units::MS = 1000;
@@ -50,7 +52,7 @@ fn main() {
     
     let mut player: Player = Player::new(((level.size.x as f32) * GAME_SIZE as f32) / 2.0,
                                          ((level.size.y as f32) * GAME_SIZE as f32) / 2.0,
-                                         sprite_sheet.generate_foreground_sprite(&SpriteType::PLAYER));
+                                         sprite_sheet.generate_foreground_sprites(&SpriteType::PLAYER));
     let mut input: Input = Input::new();
     let mut game_time: GameTime = GameTime::new();
 
@@ -120,7 +122,7 @@ fn main() {
         }
 
         if game_time.ticks % 100 == 0 {
-            let player_pos = player.sprite.get_position();
+            let player_pos = player.sprite.sfml_sprite.get_position();
             fps_text.set_string(&format!("FPS: {} - Player Pos: {}, {}", game_time.fps, player_pos.x, player_pos.y));
         }
     }

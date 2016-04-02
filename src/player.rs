@@ -7,6 +7,7 @@ use input::Input;
 use level::Level;
 use level_object::{LevelType};
 use game_time::GameTime;
+use animation_sprite::AnimationSprite;
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum MoveDirection {
@@ -18,7 +19,7 @@ pub enum MoveDirection {
 }
 
 pub struct Player<'s> {
-    pub sprite: Sprite<'s>,
+    pub sprite: AnimationSprite<'s>,
     
     move_speed: f32,
     initial_dir: MoveDirection,
@@ -27,7 +28,7 @@ pub struct Player<'s> {
 }
 
 impl<'s> Player<'s> {
-    pub fn new(x: f32, y: f32, sprite: Sprite<'s>) -> Player<'s> {
+    pub fn new(x: f32, y: f32, sprite: AnimationSprite<'s>) -> Player<'s> {
         let mut player = Player {
             sprite: sprite,
             move_speed: 0.05,
@@ -35,14 +36,14 @@ impl<'s> Player<'s> {
             move_dir: MoveDirection::NONE,
             vertex_array: VertexArray::new_init(PrimitiveType::Quads, 4).unwrap()
         };
-        let local_bounds = player.sprite.get_local_bounds();
+        let local_bounds = player.sprite.sfml_sprite.get_local_bounds();
         let new_scale = sf::Vector2f::new(super::GAME_SIZE as f32 / local_bounds.width, super::GAME_SIZE as f32 / local_bounds.height);
                 
-        player.sprite.set_scale(&new_scale);
+        player.sprite.sfml_sprite.set_scale(&new_scale);
         
         // Set origin to center
-        player.sprite.set_origin2f(local_bounds.width * 0.5, local_bounds.height * 0.5);
-        player.sprite.set_position2f(x, y);
+        player.sprite.sfml_sprite.set_origin2f(local_bounds.width * 0.5, local_bounds.height * 0.5);
+        player.sprite.sfml_sprite.set_position2f(x, y);
         
         return player;
     }
@@ -51,6 +52,7 @@ impl<'s> Player<'s> {
         self.process_input(input);
         self.update_movement(game_time, level);
         self.update_rotation();
+        self.sprite.update(game_time);
     }
     
     pub fn process_input(&mut self, input: &Input) {
@@ -77,7 +79,7 @@ impl<'s> Player<'s> {
     fn update_movement(&mut self, game_time: &GameTime, level: &Level) {
     
         let movement = self.get_new_movement(game_time);
-        let player_pos = self.sprite.get_position();
+        let player_pos = self.sprite.sfml_sprite.get_position();
 
         let mut new_movement = self.check_collision(player_pos, movement, level);
         
@@ -86,8 +88,14 @@ impl<'s> Player<'s> {
             new_movement = Player::round_movement(new_movement, 8);
         }
         
+        if self.sprite.sfml_sprite.get_position() != new_movement {
+            self.sprite.start_animation();
+        } else {
+            self.sprite.stop_animation();
+        }
+        
         self.initial_dir = self.move_dir.clone();
-        self.sprite.set_position(&new_movement);
+        self.sprite.sfml_sprite.set_position(&new_movement);
     }
     
     fn get_new_movement(&self, game_time: &GameTime) -> sf::Vector2f {
@@ -119,7 +127,7 @@ impl<'s> Player<'s> {
         let player_size = self.get_size();
 
         // Player's origin is different (center instead of bottom left)
-        let curr_origin = self.sprite.get_origin() * self.sprite.get_scale();
+        let curr_origin = self.sprite.sfml_sprite.get_origin() * self.sprite.sfml_sprite.get_scale();
         
         // Create new global bounds with the new proposed movement.
         let curr_rect = FloatRect::new(proposed_movement.x - curr_origin.x, proposed_movement.y - curr_origin.y,
@@ -152,8 +160,8 @@ impl<'s> Player<'s> {
     }
     
     fn get_size(&self) -> sf::Vector2f {
-        let player_scale = self.sprite.get_scale();
-        let player_bounds = self.sprite.get_local_bounds();
+        let player_scale = self.sprite.sfml_sprite.get_scale();
+        let player_bounds = self.sprite.sfml_sprite.get_local_bounds();
         
         let width = player_bounds.width * player_scale.x;
         let height = player_bounds.height * player_scale.y;
@@ -173,10 +181,10 @@ impl<'s> Player<'s> {
    
     fn update_rotation(&mut self) {
         match self.move_dir {
-            MoveDirection::UP => self.sprite.set_rotation(270.0),
-            MoveDirection::DOWN => self.sprite.set_rotation(90.0),
-            MoveDirection::LEFT => self.sprite.set_rotation(180.0),
-            MoveDirection::RIGHT => self.sprite.set_rotation(0.0),
+            MoveDirection::UP => self.sprite.sfml_sprite.set_rotation(270.0),
+            MoveDirection::DOWN => self.sprite.sfml_sprite.set_rotation(90.0),
+            MoveDirection::LEFT => self.sprite.sfml_sprite.set_rotation(180.0),
+            MoveDirection::RIGHT => self.sprite.sfml_sprite.set_rotation(0.0),
             _ => { }
         }    
     }
@@ -185,8 +193,8 @@ impl<'s> Player<'s> {
 impl<'s> Drawable for Player<'s> {
     fn draw<RT: RenderTarget>(&self, target: &mut RT) {
 
-        let sprite_rect = self.sprite.get_local_bounds();
-        let texture_rect = self.sprite.get_texture_rect();
+        let sprite_rect = self.sprite.sfml_sprite.get_local_bounds();
+        let texture_rect = self.sprite.sfml_sprite.get_texture_rect();
 
         // Bottom left
         self.vertex_array.get_vertex(0).position = sf::Vector2f::new(sprite_rect.left, sprite_rect.top + sprite_rect.height);
@@ -209,8 +217,8 @@ impl<'s> Drawable for Player<'s> {
         self.vertex_array.get_vertex(3).tex_coords = sf::Vector2f::new((texture_rect.left +
                                                                     texture_rect.width) as f32, (texture_rect.top + texture_rect.height) as f32);  
         let mut states = RenderStates::default();
-        states.texture = Some(&self.sprite.get_texture().unwrap());
-        states.transform = self.sprite.get_transform();
+        states.texture = Some(&self.sprite.sfml_sprite.get_texture().unwrap());
+        states.transform = self.sprite.sfml_sprite.get_transform();
         target.draw_with_renderstates(&self.vertex_array, &mut states);
     }
 }

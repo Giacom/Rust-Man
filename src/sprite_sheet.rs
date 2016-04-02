@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use sfml::graphics::{IntRect, Texture, Sprite};
 
 use level_object::LevelType;
+use animation_sprite::AnimationSprite;
 
 const SPRITE_SIZE: f32 = 64.0;
 const SPRITESHEET_PATH: &'static str = "res/sprites/game.png";
@@ -14,7 +15,7 @@ pub enum SpriteType {
 pub struct SpriteSheet {
     pub texture: Texture,
     sprite_background_map: HashMap<LevelType, IntRect>,
-    sprite_foreground_map: HashMap<SpriteType, IntRect>
+    sprite_foreground_map: HashMap<SpriteType, Vec<IntRect>>
 }
 
 impl SpriteSheet {
@@ -37,11 +38,20 @@ impl SpriteSheet {
         return generated_map;
     }
     
-    fn generate_foreground_map() -> HashMap<SpriteType, IntRect> {
+    fn generate_foreground_map() -> HashMap<SpriteType, Vec<IntRect>> {
         let mut generated_map = HashMap::new();
-        generated_map.insert(SpriteType::PLAYER, IntRect::new((SPRITE_SIZE * 0.0) as i32,
-                                                              (SPRITE_SIZE * 1.0) as i32,
-                                                               SPRITE_SIZE as i32, SPRITE_SIZE as i32));
+        
+        let player_sprites = vec![IntRect::new((SPRITE_SIZE * 0.0) as i32,
+                                               (SPRITE_SIZE * 1.0) as i32,
+                                                SPRITE_SIZE as i32, SPRITE_SIZE as i32),
+                                  IntRect::new((SPRITE_SIZE * 1.0) as i32,
+                                               (SPRITE_SIZE * 1.0) as i32,
+                                                SPRITE_SIZE as i32, SPRITE_SIZE as i32),
+                                  IntRect::new((SPRITE_SIZE * 2.0) as i32,
+                                               (SPRITE_SIZE * 1.0) as i32,
+                                                SPRITE_SIZE as i32, SPRITE_SIZE as i32)];
+        
+        generated_map.insert(SpriteType::PLAYER, player_sprites);
         return generated_map;
     }
     
@@ -56,12 +66,12 @@ impl SpriteSheet {
         }
     }
     
-    pub fn generate_foreground_sprite(&self, sprite_type: &SpriteType) -> Sprite {
+    pub fn generate_foreground_sprites(&self, sprite_type: &SpriteType) -> AnimationSprite {
         match &self.sprite_foreground_map.get(sprite_type) {
-            &Some(thing) => {
+            &Some(rects) => {
                 let mut sprite = Sprite::new_with_texture(&self.texture).unwrap();
-                sprite.set_texture_rect(&thing);
-                return sprite;
+                sprite.set_texture_rect(&rects[0]);
+                return AnimationSprite::new(sprite, rects.clone());
             }
             &None => panic!("Unable to retrieve SpriteType::{:?}.")
         }
